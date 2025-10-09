@@ -31,6 +31,7 @@ export const create = mutation({
   args: {
     title: v.string(),
     author: v.string(),
+    descripton: v.string(),
     genre: v.string(),
     availability: v.boolean(),
     imageId: v.optional(v.id("_storage")),
@@ -39,6 +40,7 @@ export const create = mutation({
     return await ctx.db.insert("books", {
       title: args.title,
       author: args.author,
+      description: args.descripton,
       genre: args.genre,
       availability: args.availability,
       imageId: args.imageId,
@@ -51,6 +53,7 @@ export const update = mutation({
     id: v.id("books"),
     title: v.string(),
     author: v.string(),
+    description: v.string(),
     genre: v.string(),
     availability: v.boolean(),
     imageId: v.optional(v.id("_storage")),
