@@ -16,8 +16,10 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Edit, Trash2 } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Image } from "lucide-react";
 import { toast } from "sonner";
+import { Textarea } from "@/components/ui/textarea";
+import { Separator } from "./ui/separator";
 
 export function Book() {
   const books = useQuery(api.books.list) || [];
@@ -113,6 +115,7 @@ function BookCard({ book, onEdit }) {
         id: book._id,
         title: book.title,
         author: book.author,
+        description: book.description,
         genre: book.genre,
         availability: !book.availability,
         imageId: book.imageId,
@@ -139,6 +142,7 @@ function BookCard({ book, onEdit }) {
       <CardHeader className="pb-2">
         <CardTitle className="text-lg line-clamp-2">{book.title}</CardTitle>
         <p className="text-sm text-muted-foreground">by {book.author}</p>
+        <p className="text-sm text-muted-foreground">{book.description}</p>
         <p className="text-xs text-muted-foreground">{book.genre}</p>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -176,6 +180,7 @@ function BookCard({ book, onEdit }) {
 function BookForm({ book, onClose }) {
   const [title, setTitle] = useState(book?.title || "");
   const [author, setAuthor] = useState(book?.author || "");
+  const [description, setDescription] = useState(book?.description || "");
   const [genre, setGenre] = useState(book?.genre || "");
   const [availability, setAvailability] = useState(book?.availability ?? true);
   const [selectedImage, setSelectedImage] = useState(null);
@@ -215,6 +220,7 @@ function BookForm({ book, onClose }) {
           id: book._id,
           title: title.trim(),
           author: author.trim(),
+          description: description.trim(),
           genre: genre.trim(),
           availability,
           imageId,
@@ -224,6 +230,7 @@ function BookForm({ book, onClose }) {
         await createBook({
           title: title.trim(),
           author: author.trim(),
+          descripton: description.trim(),
           genre: genre.trim(),
           availability,
           imageId,
@@ -262,6 +269,16 @@ function BookForm({ book, onClose }) {
       </div>
 
       <div className="space-y-2">
+        <Label htmlFor="description">Description *</Label>
+        <Textarea
+          id="description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          required
+        />
+      </div>
+
+      <div className="space-y-2">
         <Label htmlFor="genre">Genre *</Label>
         <Input
           id="genre"
@@ -289,6 +306,18 @@ function BookForm({ book, onClose }) {
           accept="image/*"
           onChange={(e) => setSelectedImage(e.target.files?.[0] || null)}
         />
+      </div>
+
+      <div className="flex items-center gap-4">
+        <Separator className="flex-1" />
+        <span className="text-sm text-muted-foreground">OR</span>
+        <Separator className="flex-1" />
+      </div>
+
+      <div className="space-y-2">
+        <Button className="w-full" variant="outline">
+          <Image /> Generate Cover
+        </Button>
       </div>
 
       <div className="flex gap-3 pt-4">
