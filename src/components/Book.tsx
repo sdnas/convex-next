@@ -41,7 +41,7 @@ export function Book() {
               Add Book
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="w-full max-w-screen-xl">
             <DialogHeader>
               <DialogTitle>
                 {editingBook ? "Edit Book" : "Add New Book"}
@@ -247,77 +247,101 @@ function BookForm({ book, onClose }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="title">Title *</Label>
-        <Input
-          id="title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          required
-        />
-      </div>
+    <form onSubmit={handleSubmit}>
+      <div className="flex gap-6">
+        <div className="flex-1 space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="title">Title *</Label>
+            <Input
+              id="title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+            />
+          </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="author">Author *</Label>
-        <Input
-          id="author"
-          value={author}
-          onChange={(e) => setAuthor(e.target.value)}
-          required
-        />
-      </div>
+          <div className="space-y-2">
+            <Label htmlFor="author">Author *</Label>
+            <Input
+              id="author"
+              value={author}
+              onChange={(e) => setAuthor(e.target.value)}
+              required
+            />
+          </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="description">Description *</Label>
-        <Textarea
-          id="description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          required
-        />
-      </div>
+          <div className="space-y-2">
+            <Label htmlFor="description">Description *</Label>
+            <Textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              required
+            />
+          </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="genre">Genre *</Label>
-        <Input
-          id="genre"
-          value={genre}
-          onChange={(e) => setGenre(e.target.value)}
-          placeholder="e.g., Fiction, Mystery, Romance"
-          required
-        />
-      </div>
+          <div className="space-y-2">
+            <Label htmlFor="genre">Genre *</Label>
+            <Input
+              id="genre"
+              value={genre}
+              onChange={(e) => setGenre(e.target.value)}
+              placeholder="e.g., Fiction, Mystery, Romance"
+              required
+            />
+          </div>
 
-      <div className="flex items-center space-x-2">
-        <Checkbox
-          id="availability"
-          checked={availability}
-          onCheckedChange={setAvailability}
-        />
-        <Label htmlFor="availability">Available</Label>
-      </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="availability"
+              checked={availability}
+              onCheckedChange={setAvailability}
+            />
+            <Label htmlFor="availability">Available</Label>
+          </div>
+        </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="image">Book Cover Image</Label>
-        <Input
-          id="image"
-          type="file"
-          accept="image/*"
-          onChange={(e) => setSelectedImage(e.target.files?.[0] || null)}
-        />
-      </div>
+        <div className="w-1/3 space-y-4">
+          <div className="aspect-[3/4] bg-muted rounded-md flex items-center justify-center overflow-hidden">
+            {selectedImage ? (
+              <img
+                src={URL.createObjectURL(selectedImage)}
+                alt="Selected Book Cover"
+                className="object-cover w-full h-full"
+              />
+            ) : book?.imageUrl ? (
+              <img
+                src={book.imageUrl}
+                alt={book.title}
+                className="object-cover w-full h-full"
+              />
+            ) : (
+              <span className="text-muted-foreground">Image Preview</span>
+            )}
+          </div>
 
-      <div className="flex items-center gap-4">
-        <Separator className="flex-1" />
-        <span className="text-sm text-muted-foreground">OR</span>
-        <Separator className="flex-1" />
-      </div>
+          <div className="space-y-2">
+            <Label htmlFor="image">Book Cover Image</Label>
+            <Input
+              id="image"
+              type="file"
+              accept="image/*"
+              onChange={(e) => setSelectedImage(e.target.files?.[0] || null)}
+            />
+          </div>
 
-      <div className="space-y-2">
-        <Button className="w-full" variant="outline">
-          <Image /> Generate Cover
-        </Button>
+          <div className="flex items-center gap-4">
+            <Separator className="flex-1" />
+            <span className="text-sm text-muted-foreground">OR</span>
+            <Separator className="flex-1" />
+          </div>
+
+          <div className="space-y-2">
+            <Button className="w-full" variant="outline">
+              <Image /> Generate Cover
+            </Button>
+          </div>
+        </div>
       </div>
 
       <div className="flex gap-3 pt-4">
