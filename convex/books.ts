@@ -31,7 +31,7 @@ export const create = mutation({
   args: {
     title: v.string(),
     author: v.string(),
-    descripton: v.string(),
+    description: v.string(),
     genre: v.string(),
     availability: v.boolean(),
     imageId: v.optional(v.id("_storage")),
@@ -40,7 +40,7 @@ export const create = mutation({
     return await ctx.db.insert("books", {
       title: args.title,
       author: args.author,
-      description: args.descripton,
+      description: args.description,
       genre: args.genre,
       availability: args.availability,
       imageId: args.imageId,
@@ -98,5 +98,14 @@ export const search = query({
         imageUrl: book.imageId ? await ctx.storage.getUrl(book.imageId) : null,
       }))
     );
+  },
+});
+
+export const getStorageUrl = query({
+  args: {
+    id: v.id("_storage"),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.storage.getUrl(args.id);
   },
 });
