@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useMutation, useQuery } from "convex/react";
+import { useAction, useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,6 +20,7 @@ import { Plus, Search, Edit, Trash2, Image } from "lucide-react";
 import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "./ui/separator";
+import { Id } from "../../convex/_generated/dataModel";
 
 export function Book() {
   const books = useQuery(api.books.list) || [];
@@ -185,10 +186,18 @@ function BookForm({ book, onClose }) {
   const [availability, setAvailability] = useState(book?.availability ?? true);
   const [selectedImage, setSelectedImage] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [imageId, setImageId] = useState(null);
+  const [generatedImageFile, setGeneratedImageFile] = useState(null);
+  const [generatedImagePreview, setGeneratedImagePreview] = useState(null);
 
   const createBook = useMutation(api.books.create);
   const updateBook = useMutation(api.books.update);
   const generateUploadUrl = useMutation(api.books.generateUploadUrl);
+  const generateCoverImage = useAction(api.ai.aiGeneratedImage);
+  const imageUrl = useQuery(
+    api.books.getStorageUrl,
+    imageId ? { id: imageId } : "skip"
+  );
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -199,7 +208,7 @@ function BookForm({ book, onClose }) {
 
     setIsSubmitting(true);
     try {
-      let imageId = book?.imageId;
+      let finalImageId = imageId ?? book?.imageId ?? null;
 
       if (selectedImage) {
         const postUrl = await generateUploadUrl();
@@ -212,35 +221,82 @@ function BookForm({ book, onClose }) {
         if (!result.ok) {
           throw new Error(`Upload failed: ${JSON.stringify(json)}`);
         }
-        imageId = json.storageId;
+        finalImageId = json.storageId;
+      } else if (generatedImageFile) {
+        const postUrl = await generateUploadUrl();
+        const result = await fetch(postUrl, {
+          method: "POST",
+          headers: { "Content-Type": "image/jpeg" },
+          body: generatedImageFile,
+        });
+        const json = await result.json();
+        if (!result.ok) throw new Error("Upload failed");
+        finalImageId = json.storageId;
       }
+
+      const bookData = {
+        title: title.trim(),
+        author: author.trim(),
+        description: description.trim(),
+        genre: genre.trim(),
+        availability,
+        imageId: finalImageId,
+      };
 
       if (book) {
         await updateBook({
           id: book._id,
-          title: title.trim(),
-          author: author.trim(),
-          description: description.trim(),
-          genre: genre.trim(),
-          availability,
-          imageId,
+          ...bookData,
         });
         toast.success("Book updated successfully");
       } else {
-        await createBook({
-          title: title.trim(),
-          author: author.trim(),
-          descripton: description.trim(),
-          genre: genre.trim(),
-          availability,
-          imageId,
-        });
+        await createBook(bookData);
         toast.success("Book created successfully");
       }
 
       onClose();
     } catch (error) {
       toast.error(book ? "Failed to update book" : "Failed to create book");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleGenerateCover = async () => {
+    if (!title.trim() || !author.trim()) {
+      toast.error("Please enter title and author first");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // const { imageId } = await generateCoverImage({
+      //   title: title.trim(),
+      //   author: author.trim(),
+      // });
+      // setImageId(imageId);
+
+      const { base64 } = await generateCoverImage({
+        title: title.trim(),
+        author: author.trim(),
+      });
+
+      const imageBlob = await (
+        await fetch(`data:image/jpeg;base64,${base64}`)
+      ).blob();
+      const file = new File([imageBlob], "ai-cover.jpg", {
+        type: "image/jpeg",
+      });
+
+      setGeneratedImageFile(file);
+
+      setGeneratedImagePreview(URL.createObjectURL(file));
+
+      toast.success("Cover generated successfully");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to generate cover");
     } finally {
       setIsSubmitting(false);
     }
@@ -302,11 +358,35 @@ function BookForm({ book, onClose }) {
         </div>
 
         <div className="w-1/3 space-y-4">
-          <div className="aspect-[3/4] bg-muted rounded-md flex items-center justify-center overflow-hidden">
-            {selectedImage ? (
+          {/* <div className="aspect-[3/4] bg-muted rounded-md flex items-center justify-center overflow-hidden">
+            {imageUrl ? (
               <img
-                src={URL.createObjectURL(selectedImage)}
+                src={imageUrl}
                 alt="Selected Book Cover"
+                className="object-cover w-full h-full"
+              />
+            ) : book?.imageUrl ? (
+              <img
+                src={book.imageUrl}
+                alt={book.title}
+                className="object-cover w-full h-full"
+              />
+            ) : (
+              <span className="text-muted-foreground">Image Preview</span>
+            )}
+          </div> */}
+
+          <div className="aspect-[3/4] bg-muted rounded-md flex items-center justify-center overflow-hidden">
+            {imageUrl ? (
+              <img
+                src={imageUrl}
+                alt="Uploaded Book Cover"
+                className="object-cover w-full h-full"
+              />
+            ) : generatedImagePreview ? (
+              <img
+                src={generatedImagePreview}
+                alt="AI Generated Book Cover"
                 className="object-cover w-full h-full"
               />
             ) : book?.imageUrl ? (
@@ -337,7 +417,12 @@ function BookForm({ book, onClose }) {
           </div>
 
           <div className="space-y-2">
-            <Button className="w-full" variant="outline">
+            <Button
+              className="w-full"
+              variant="outline"
+              disabled={isSubmitting}
+              onClick={handleGenerateCover}
+            >
               <Image /> Generate Cover
             </Button>
           </div>
