@@ -12,7 +12,7 @@ export const aiGeneratedImage = action({
     author: v.string(),
   },
   handler: async (ctx, args) => {
-    const prompt = `Design a cover layout for a titled "${args.title}" by ${args.author}. The title should be clearly written on the cover in readable, professional typography. The design should reflect the theme of the book and look like a real published cover, not a 3D book. example format title, author background image or title image author`;
+    const prompt = `A professionally designed book cover for the title "${args.title}" by "${args.author}". The image should be visually compelling and suitable for print, with symbolic or thematic elements that reflect the essence of the book. It should feature clean, readable typography for the title and author name, a balanced composition, and a harmonious color palette. The design should be genre-neutral, polished, and bookstore-ready, evoking curiosity without including literal prompt text or abstract distortions.`;
 
     const response = await fetch(
       "https://api.cloudflare.com/client/v4/accounts/d87c54744874fb0bdb0ce388e69d16e2/ai/run/@cf/leonardo/phoenix-1.0",
@@ -25,10 +25,11 @@ export const aiGeneratedImage = action({
         body: JSON.stringify({
           prompt,
           width: 640,
-          height: 1024,
+          height: 960,
           guidance: 10,
           num_steps: 30,
-          negative_prompt: "blurry, distorted, unreadable text",
+          negative_prompt:
+            "blurry, abstract, surreal, distorted, unreadable text, prompt instructions, watermark, UI elements",
         }),
       }
     );
