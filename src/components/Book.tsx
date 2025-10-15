@@ -30,6 +30,7 @@ import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "./ui/separator";
 import { Id } from "../../convex/_generated/dataModel";
+import Modal from "./Modal";
 
 export function Book() {
   const books = useQuery(api.books.list) || [];
@@ -48,6 +49,8 @@ export function Book() {
   const currentBooks = displayBooks.slice(indexOfFirstItem, indexOfLastItem);
 
   const totalPages = Math.ceil(displayBooks.length / itemsPerPage);
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
     // <div className="container mx-auto p-6 space-y-6">
@@ -113,7 +116,7 @@ export function Book() {
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Books</h1>
-        <div className="flex gap-2">
+        {/* <div className="flex gap-2">
           <Button
             variant={viewMode === "card" ? "default" : "outline"}
             onClick={() => setViewMode("card")}
@@ -150,6 +153,50 @@ export function Book() {
               />
             </DialogContent>
           </Dialog>{" "}
+        </div> */}
+
+        <div className="flex items-center gap-4">
+          <div className="flex gap-2">
+            <Button
+              variant={viewMode === "card" ? "default" : "outline"}
+              onClick={() => setViewMode("card")}
+            >
+              <LayoutGrid className="w-4 h-4 mr-2" />
+              Card View
+            </Button>
+            <Button
+              variant={viewMode === "table" ? "default" : "outline"}
+              onClick={() => setViewMode("table")}
+            >
+              <Table className="w-4 h-4 mr-2" />
+              Table View
+            </Button>
+          </div>
+
+          <Button
+            onClick={() => {
+              setEditingBook(null);
+              setIsModalOpen(true);
+            }}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Book
+          </Button>
+
+          <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
+            <div className="p-6">
+              <h2 className="text-2xl font-bold mb-4">
+                {editingBook ? "Edit Book" : "Add New Book"}
+              </h2>
+              <BookForm
+                book={editingBook}
+                onClose={() => {
+                  setIsModalOpen(false);
+                  setEditingBook(null);
+                }}
+              />
+            </div>
+          </Modal>
         </div>
       </div>
       <div className="relative max-w-md">
@@ -172,7 +219,8 @@ export function Book() {
                   book={book}
                   onEdit={() => {
                     setEditingBook(book);
-                    setIsDialogOpen(true);
+                    // setIsDialogOpen(true);
+                    setIsModalOpen(true);
                   }}
                 />
               ))}
@@ -182,7 +230,8 @@ export function Book() {
               books={currentBooks}
               onEdit={(book) => {
                 setEditingBook(book);
-                setIsDialogOpen(true);
+                // setIsDialogOpen(true);
+                setIsModalOpen(true);
               }}
             />
           )}
@@ -580,6 +629,7 @@ function BookForm({ book, onClose }) {
             <Label htmlFor="description">Description *</Label>
             <Textarea
               id="description"
+              className="w-full max-h-40 overflow-y-auto resize-y border rounded-md p-2"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               required
