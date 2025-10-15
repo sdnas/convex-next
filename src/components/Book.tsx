@@ -42,6 +42,11 @@ export function Book() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+    setCurrentPage(1);
+  };
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex justify-between items-center">
@@ -95,7 +100,7 @@ export function Book() {
         <Input
           placeholder="Search books by title or author..."
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={handleSearchChange}
           className="pl-10"
         />
       </div>
