@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Button } from "@/components/ui/button";
@@ -385,10 +385,12 @@ function BookForm({ book, onClose }) {
   const [genre, setGenre] = useState(book?.genre || "");
   const [availability, setAvailability] = useState(book?.availability ?? true);
   const [selectedImage, setSelectedImage] = useState(null);
+  const [selectedImagePreview, setSelectedImagePreview] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imageId, setImageId] = useState(null);
   const [generatedImageFile, setGeneratedImageFile] = useState(null);
   const [generatedImagePreview, setGeneratedImagePreview] = useState(null);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const createBook = useMutation(api.books.create);
   const updateBook = useMutation(api.books.update);
@@ -398,6 +400,25 @@ function BookForm({ book, onClose }) {
     api.books.getStorageUrl,
     imageId ? { id: imageId } : "skip"
   );
+
+  const fileInputRef = useRef(null);
+
+  const onSelectImage = (file) => {
+    setSelectedImage(file);
+    setGeneratedImageFile(null);
+    setGeneratedImagePreview(null);
+  };
+
+  useEffect(() => {
+    if (!selectedImage) {
+      setSelectedImagePreview(null);
+      return;
+    }
+    const objectUrl = URL.createObjectURL(selectedImage);
+    setSelectedImagePreview(objectUrl);
+
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [selectedImage]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -468,7 +489,7 @@ function BookForm({ book, onClose }) {
       return;
     }
 
-    setIsSubmitting(true);
+    setIsGenerating(true);
 
     try {
       const { base64 } = await generateCoverImage({
@@ -483,6 +504,12 @@ function BookForm({ book, onClose }) {
         type: "image/jpeg",
       });
 
+      setSelectedImage(null);
+
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+
       setGeneratedImageFile(file);
 
       setGeneratedImagePreview(URL.createObjectURL(file));
@@ -492,7 +519,7 @@ function BookForm({ book, onClose }) {
       console.error(error);
       toast.error("Failed to generate cover");
     } finally {
-      setIsSubmitting(false);
+      setIsGenerating(false);
     }
   };
 
@@ -583,7 +610,13 @@ function BookForm({ book, onClose }) {
 
         <div className="w-full md:w-1/3 space-y-6">
           <div className="aspect-[3/4] bg-gray-100 rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition-shadow duration-300 cursor-pointer">
-            {imageUrl || generatedImagePreview || book?.imageUrl ? (
+            {selectedImagePreview ? (
+              <img
+                src={selectedImagePreview}
+                alt="Selected Book Cover"
+                className="object-cover w-full h-full transition-transform duration-300 hover:scale-105"
+              />
+            ) : imageUrl || generatedImagePreview || book?.imageUrl ? (
               <img
                 src={imageUrl || generatedImagePreview || book?.imageUrl}
                 alt="Book Cover"
@@ -597,10 +630,11 @@ function BookForm({ book, onClose }) {
           </div>
 
           <Input
+            ref={fileInputRef}
             id="image"
             type="file"
             accept="image/*"
-            onChange={(e) => setSelectedImage(e.target.files?.[0] || null)}
+            onChange={(e) => onSelectImage(e.target.files?.[0] || null)}
             className="w-full"
           />
 
@@ -615,10 +649,11 @@ function BookForm({ book, onClose }) {
           <Button
             className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold shadow-md hover:shadow-xl transition-shadow rounded-lg px-6 py-3"
             variant="none"
-            disabled={isSubmitting}
+            disabled={isSubmitting || isGenerating}
             onClick={handleGenerateCover}
           >
-            <Image className="w-5 h-5 mr-2" /> Generate Cover
+            <Image className="w-5 h-5 mr-2" />
+            {isGenerating ? "Generating..." : "Generate Cover"}
           </Button>
         </div>
       </div>
@@ -634,10 +669,16 @@ function BookForm({ book, onClose }) {
         </Button>
         <Button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isSubmitting || isGenerating}
           className="flex-1 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition"
         >
-          {isSubmitting ? "Saving..." : book ? "Update" : "Create"}
+          {isSubmitting
+            ? "Saving..."
+            : isGenerating
+              ? "Generating..."
+              : book
+                ? "Update"
+                : "Create"}
         </Button>
       </div>
     </form>
