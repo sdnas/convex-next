@@ -1,10 +1,8 @@
 "use node";
 
-import { api } from "./_generated/api";
 import { action } from "./_generated/server";
 import { v } from "convex/values";
 import { Buffer } from "buffer";
-import { Id } from "./_generated/dataModel";
 
 export const aiGeneratedImage = action({
   args: {
@@ -19,7 +17,7 @@ export const aiGeneratedImage = action({
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${process.env.REPLICATE_API_TOKEN}`,
+          Authorization: `Bearer ${process.env.CLOUDFARE_AI_API_KEY}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -38,16 +36,5 @@ export const aiGeneratedImage = action({
     const base64 = Buffer.from(result).toString("base64");
 
     return { base64 };
-
-    // const uploadUrl = await ctx.runMutation(api.books.generateUploadUrl);
-    // const uploadRes = await fetch(uploadUrl, {
-    //   method: "POST",
-    //   headers: { "Content-Type": "image/jpeg" },
-    //   body: base64,
-    // });
-
-    // const uploadJson = await uploadRes.json();
-
-    // return { imageId: uploadJson.storageId as Id<"_storage"> };
   },
 });
