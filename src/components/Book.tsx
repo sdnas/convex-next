@@ -38,8 +38,16 @@ export function Book() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingBook, setEditingBook] = useState(null);
   const [viewMode, setViewMode] = useState<"card" | "table">("card");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 4;
 
   const displayBooks = searchQuery.trim() ? searchResults || [] : books;
+
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentBooks = displayBooks.slice(indexOfFirstItem, indexOfLastItem);
+
+  const totalPages = Math.ceil(displayBooks.length / itemsPerPage);
 
   return (
     // <div className="container mx-auto p-6 space-y-6">
@@ -155,28 +163,65 @@ export function Book() {
       </div>
 
       {displayBooks.length > 0 ? (
-        viewMode === "card" ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {displayBooks.map((book) => (
-              <BookCard
-                key={book._id}
-                book={book}
-                onEdit={() => {
-                  setEditingBook(book);
-                  setIsDialogOpen(true);
-                }}
-              />
-            ))}
-          </div>
-        ) : (
-          <BookTable
-            books={displayBooks}
-            onEdit={(book) => {
-              setEditingBook(book);
-              setIsDialogOpen(true);
-            }}
-          />
-        )
+        <div>
+          {viewMode === "card" ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {currentBooks.map((book) => (
+                <BookCard
+                  key={book._id}
+                  book={book}
+                  onEdit={() => {
+                    setEditingBook(book);
+                    setIsDialogOpen(true);
+                  }}
+                />
+              ))}
+            </div>
+          ) : (
+            <BookTable
+              books={currentBooks}
+              onEdit={(book) => {
+                setEditingBook(book);
+                setIsDialogOpen(true);
+              }}
+            />
+          )}
+
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center gap-2 mt-6">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((prev) => prev - 1)}
+              >
+                Previous
+              </Button>
+
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                (page) => (
+                  <Button
+                    key={page}
+                    size="sm"
+                    variant={page === currentPage ? "default" : "outline"}
+                    onClick={() => setCurrentPage(page)}
+                  >
+                    {page}
+                  </Button>
+                )
+              )}
+
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage((prev) => prev + 1)}
+              >
+                Next
+              </Button>
+            </div>
+          )}
+        </div>
       ) : (
         <div className="text-center py-12">
           <p className="text-muted-foreground text-lg">
