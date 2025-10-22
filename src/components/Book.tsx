@@ -32,11 +32,28 @@ export function Book() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 4;
 
-  const displayBooks = searchQuery.trim() ? searchResults || [] : books;
+  const [selectedGenre, setSelectedGenre] = useState("All");
+  const [sortField, setSortField] = useState("title");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+
+  const filteredBooks = (
+    searchQuery.trim() ? searchResults || [] : books
+  ).filter((book) => selectedGenre === "All" || book.genre === selectedGenre);
+
+  const displayBooks = filteredBooks;
+
+  const sortedBooks = [...filteredBooks].sort((a, b) => {
+    const aVal = a[sortField]?.toString().toLowerCase() ?? "";
+    const bVal = b[sortField]?.toString().toLowerCase() ?? "";
+
+    if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
+    if (aVal > bVal) return sortOrder === "asc" ? 1 : -1;
+    return 0;
+  });
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentBooks = displayBooks.slice(indexOfFirstItem, indexOfLastItem);
+  const currentBooks = sortedBooks.slice(indexOfFirstItem, indexOfLastItem);
 
   const totalPages = Math.ceil(displayBooks.length / itemsPerPage);
 
@@ -45,6 +62,15 @@ export function Book() {
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
     setCurrentPage(1);
+  };
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortOrder("asc");
+    }
   };
 
   return (
@@ -95,14 +121,34 @@ export function Book() {
           </Modal>
         </div>
       </div>
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search books by title or author..."
-          value={searchQuery}
-          onChange={handleSearchChange}
-          className="pl-10"
-        />
+      <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
+        <div>
+          <select
+            value={selectedGenre}
+            onChange={(e) => {
+              setSelectedGenre(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="w-[300px] border px-3 py-2 rounded"
+          >
+            <option value="All">All Genres</option>
+            {[...new Set(books.map((b) => b.genre))].map((genre) => (
+              <option key={genre} value={genre}>
+                {genre}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="relative w-full sm:w-[300px]">
+          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search books by title or author..."
+            value={searchQuery}
+            onChange={handleSearchChange}
+            className="pl-10 w-full"
+          />
+        </div>
       </div>
 
       {displayBooks.length > 0 ? (
@@ -127,6 +173,9 @@ export function Book() {
                 setEditingBook(book);
                 setIsModalOpen(true);
               }}
+              onSort={handleSort}
+              sortField={sortField}
+              sortOrder={sortOrder}
             />
           )}
 
@@ -279,7 +328,7 @@ function BookCard({ book, onEdit }) {
   );
 }
 
-function BookTable({ books, onEdit }) {
+function BookTable({ books, onEdit, onSort, sortField, sortOrder }) {
   const removeBook = useMutation(api.books.remove);
   const handleDelete = async (book) => {
     if (confirm("Are you sure you want to delete this book?")) {
@@ -297,7 +346,10 @@ function BookTable({ books, onEdit }) {
         <thead className="bg-muted text-muted-foreground">
           <tr>
             <th className="px-4 py-2 text-left">Cover</th>
-            <th className="px-4 py-2 text-left">Title</th>
+            <th className="px-4 py-2 text-left" onClick={() => onSort("title")}>
+              Title{" "}
+              {sortField === "title" ? (sortOrder === "asc" ? "↑" : "↓") : ""}
+            </th>
             <th className="px-4 py-2 text-left">Author</th>
             <th className="px-4 py-2 text-left">Genre</th>
             <th className="px-4 py-2 text-left">Availability</th>
