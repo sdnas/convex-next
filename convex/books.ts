@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
+import { paginationOptsValidator } from "convex/server";
 
 export const list = query({
   args: {},
@@ -67,6 +68,15 @@ export const update = mutation({
 export const remove = mutation({
   args: { id: v.id("books") },
   handler: async (ctx, args) => {
+    const book = await ctx.db.get(args.id);
+    if (!book) {
+      throw new Error("Book not found");
+    }
+
+    if (book.imageId) {
+      await ctx.storage.delete(book.imageId);
+    }
+
     await ctx.db.delete(args.id);
   },
 });
@@ -107,5 +117,30 @@ export const getStorageUrl = query({
   },
   handler: async (ctx, args) => {
     return await ctx.storage.getUrl(args.id);
+  },
+});
+
+export const getGenres = query({
+  handler: async (ctx) => {
+    const genres = await ctx.db.query("books").withIndex("by_genre").collect();
+
+    const uniqueGenres = Array.from(new Set(genres.map((b) => b.genre)));
+    return uniqueGenres;
+  },
+});
+
+export const paginateSorted = query({
+  args: {
+    paginationOpts: paginationOptsValidator,
+    sortBy: v.union(v.literal("title"), v.literal("author")),
+    sortDirection: v.union(v.literal("asc"), v.literal("desc")),
+  },
+  handler: async (ctx, { paginationOpts, sortBy, sortDirection }) => {
+    const query = ctx.db
+      .query("books")
+      .withIndex(`by_${sortBy}`)
+      .order(sortDirection);
+
+    return await query.paginate(paginationOpts);
   },
 });
